@@ -30,6 +30,7 @@
 #define SRC_DJI_INTERFACE_H_
 
 #include <ros/ros.h>
+#include <std_srvs/Empty.h> //CUSTOMIZATION
 #include <mav_msgs/RollPitchYawrateThrust.h>
 #include <mav_msgs/default_topics.h>
 #include <mav_msgs/Status.h>
@@ -87,6 +88,13 @@ class DJIInterface
 
   //callbacks
   void commandRollPitchYawrateThrustCallback(const mav_msgs::RollPitchYawrateThrustConstPtr& msg);
+
+  //CUSTOMIZATION
+  //ROS Service callback for emergency disarm
+  bool disArmServiceCallback(std_srvs::Empty::Request & /*request*/, std_srvs::Empty::Response & /*response*/);
+  ros::ServiceServer disArmService;
+  //CUSTOMIZATION
+
 
   std::string frame_id_;
   std::string device_;

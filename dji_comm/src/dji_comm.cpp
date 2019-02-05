@@ -141,8 +141,8 @@ void* DJIComm::mainCommunicationThread(void* core_api){
     if(counter > 10000){
       average_sending_time = average_sending_time / counter;
       average_read_time = average_read_time/counter;
-      // std::cout << "avg send time: " << average_sending_time*1e3 << "\t max send time: " << max_sending_time*1e3 << std::endl;
-      // std::cout << "avg read time: " << average_read_time*1e3 << "\t max read time: " << max_read_time*1e3 << std::endl;
+     // std::cout << "avg send time: " << average_sending_time*1e3 << "\t max send time: " << max_sending_time*1e3 << std::endl;
+     // std::cout << "avg read time: " << average_read_time*1e3 << "\t max read time: " << max_read_time*1e3 << std::endl;
       max_sending_time = 0;
       max_read_time = 0;
       average_sending_time = 0;
@@ -183,5 +183,15 @@ void DJIComm::setRollPitchYawrateThrust(double roll_cmd, double pitch_cmd, doubl
 void DJIComm::setBroadcastFrequency(uint8_t* freq){
   core_api_ptr_->setBroadcastFreq(freq);
 }
+
+//CUSTOMIZATION
+//This function calls setArm in DJI_FLIGHT to disarm the system
+bool DJIComm::setDisArm(int waitTime)
+{
+  flight_ptr_->task(DJI::onboardSDK::Flight::TASK::TASK_LANDING); 
+  flight_ptr_->setArm(false);
+  return true;
+}
+//CUSTOMIZATION
 
 } /* namespace dji_comm */

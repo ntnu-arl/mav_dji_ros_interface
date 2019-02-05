@@ -171,6 +171,10 @@ void DJIInterface::setPublishers()
   imu_pub_ = nh_.advertise<sensor_msgs::Imu>(mav_msgs::default_topics::IMU, 1);
   rc_pub_ = nh_.advertise<sensor_msgs::Joy>(mav_msgs::default_topics::RC, 1);
   status_pub_ = nh_.advertise<mav_msgs::Status>(mav_msgs::default_topics::STATUS, 1);
+
+  //CUSTOMIZATION
+  disArmService = nh_.advertiseService("/matrice/emergency_disarm", &DJIInterface::disArmServiceCallback, this);
+  //CUSTOMIZATION
 }
 
 void DJIInterface::setSubscribers()
@@ -470,7 +474,8 @@ void DJIInterface::updateControlMode(const DJI::onboardSDK::BroadcastData& data)
 
 int DJIInterface::getFrequencyValue(int freq_hz)
 {
-switch (freq_hz) {
+  switch (freq_hz)
+  {
   case (0):
     return 0;
   case (1):
@@ -484,7 +489,34 @@ switch (freq_hz) {
   default:
     ROS_WARN_STREAM(kScreenPrefix + "Unacceptable frequency value. Acceptable values are 0, 1, 10, 50, 100 Hz.");
     return 5;
+  }
 }
+
+//CUSTOMIZATION
+//ROS service for emergency stop
+bool DJIInterface::disArmServiceCallback(std_srvs::Empty::Request & /*request*/, std_srvs::Empty::Response & /*response*/)
+{
+  //Get Data
+  DJI::onboardSDK::BroadcastData data;
+  dji_comm_.getBroadcastData(&data);
+  bool rc_mode_F = (data.rc.mode == 8000);
+  bool rc_serial_enabled = data.rc.gear < int(-kRCStickMaxValue / 2); //kRCStickMaxValue = 10000.0;
+
+  //Check if system was initialized, in F-mode and SDK control(serial) had been enabled
+  if (initialized_ && rc_mode_F && rc_serial_enabled)
+  {
+    ROS_ERROR_STREAM(kScreenPrefix + "DISARM INITIALIZED");
+    //Disarm
+    bool disArmSuccess = dji_comm_.setDisArm(1); //timeout has not effect
+    return disArmSuccess;
+  }
+  else
+  {
+    ROS_WARN_STREAM(kScreenPrefix + "CANNOT INITIALIZE SYSTEM DISARM -- Check RC Switches");
+    std::cout << kScreenPrefix + "System Intialized: " << initialized_ << " ,RC F-mode: " << rc_mode_F << " ,RC Serial enabled: " << rc_serial_enabled << std::endl;
+    return false;
+  }
 }
+//CUSTOMIZATION
 
 } /* namespace mav_disturbance_observer */

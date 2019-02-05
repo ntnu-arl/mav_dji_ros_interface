@@ -96,6 +96,10 @@ class DJIComm
   void setRollPitchYawrateThrust(double roll_cmd, double pitch_cmd, double yaw_rate, double thrust);
   //set broadcast freq
   void setBroadcastFrequency(uint8_t* freq);
+  //CUSTOMIZATION
+  //set matrice to disarm
+  bool setDisArm(int waitTime);
+  //CUSTOMIZATION
 
  private:
   static constexpr int kSerialTimeout_ms = 100;
