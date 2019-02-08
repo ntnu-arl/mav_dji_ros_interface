@@ -1,0 +1,12 @@
+<!-- Launch me ! -->
+<launch>
+
+  <!--DJI Interface -->
+ 	<arg name="mav_name" default="m100"/> 
+  <node name="dji_interface" pkg="dji_interface" type="dji_interface_node" ns="matrice" respawn="true" clear_params="true" output="screen">
+    <rosparam file="$(find launch_dir)/config/$(arg mav_name)/unr_matrice_params.yaml"/>
+  </node>
+  
+  <node name="img_throttler" type="throttle" pkg="topic_tools" args="messages /camera/image_color 5 /camera/image_color_throttled" />
+
+</launch>

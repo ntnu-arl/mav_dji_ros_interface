@@ -192,6 +192,15 @@ bool DJIComm::setDisArm(int waitTime)
   flight_ptr_->setArm(false);
   return true;
 }
+//This function calls setArm in DJI_FLIGHT to arm the system
+bool DJIComm::setArm(int waitTime)
+{
+  //flight_ptr_->task(DJI::onboardSDK::Flight::TASK::TASK_LANDING);
+  std::cout << "Call flight_ptr_->setArm(true)\n";
+  flight_ptr_->setArm(true);
+  std::cout << "flight_ptr_->setArm(true) DONE\n";
+  return true;
+}
 //CUSTOMIZATION
 
 } /* namespace dji_comm */

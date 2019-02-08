@@ -174,6 +174,7 @@ void DJIInterface::setPublishers()
 
   //CUSTOMIZATION
   disArmService = nh_.advertiseService("/matrice/emergency_disarm", &DJIInterface::disArmServiceCallback, this);
+  armService = nh_.advertiseService("/matrice/arm", &DJIInterface::armServiceCallback, this);
   //CUSTOMIZATION
 }
 
@@ -517,6 +518,13 @@ bool DJIInterface::disArmServiceCallback(std_srvs::Empty::Request & /*request*/,
     return false;
   }
 }
+//ROS service for arm and take-off
+bool DJIInterface::armServiceCallback(std_srvs::Empty::Request & /*request*/, std_srvs::Empty::Response & /*response*/)
+{
+  std::cout << "armServiceCallback\n";
+  bool disArmSuccess = dji_comm_.setArm(1); //timeout has not effect
+}
+
 //CUSTOMIZATION
 
 } /* namespace mav_disturbance_observer */

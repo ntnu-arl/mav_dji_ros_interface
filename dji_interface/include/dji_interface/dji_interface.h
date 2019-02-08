@@ -93,6 +93,9 @@ class DJIInterface
   //ROS Service callback for emergency disarm
   bool disArmServiceCallback(std_srvs::Empty::Request & /*request*/, std_srvs::Empty::Response & /*response*/);
   ros::ServiceServer disArmService;
+  //ROS Service callback for arm
+  bool armServiceCallback(std_srvs::Empty::Request & /*request*/, std_srvs::Empty::Response & /*response*/);
+  ros::ServiceServer armService;
   //CUSTOMIZATION
 
 

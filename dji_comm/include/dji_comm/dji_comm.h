@@ -99,6 +99,8 @@ class DJIComm
   //CUSTOMIZATION
   //set matrice to disarm
   bool setDisArm(int waitTime);
+  //set matric to arm
+  bool setArm(int waitTime);
   //CUSTOMIZATION
 
  private:
