@@ -28,13 +28,14 @@
  */
 #include "dji_interface/dji_interface.h"
 
-namespace dji_interface {
+namespace dji_interface
+{
 
 const std::string DJIInterface::kScreenPrefix = "[dji interface]: ";
 constexpr double DJIInterface::kAngularVelocityNoiseVariance;
 constexpr double DJIInterface::kLinearAccelerationNoiseVariance;
 
-DJIInterface::DJIInterface(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh)
+DJIInterface::DJIInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh)
     : nh_(nh),
       private_nh_(private_nh),
       dji_comm_(nh, private_nh),
@@ -50,7 +51,6 @@ DJIInterface::DJIInterface(const ros::NodeHandle& nh, const ros::NodeHandle& pri
 
 DJIInterface::~DJIInterface()
 {
-
 }
 
 void DJIInterface::loadParameters()
@@ -77,13 +77,20 @@ void DJIInterface::loadParameters()
   private_nh_.param<std::string>("drone_version", drone_version_, "M100");
   std::cout << "drone_version: " << drone_version_ << std::endl;
 
-  if (drone_version_ == "M100") {
+  if (drone_version_ == "M100")
+  {
     activation_data_.version = DJI::onboardSDK::versionM100_31;
-  } else if (drone_version_ == "A3_31") {
+  }
+  else if (drone_version_ == "A3_31")
+  {
     activation_data_.version = DJI::onboardSDK::versionA3_31;
-  } else if (drone_version_ == "A3_32") {
+  }
+  else if (drone_version_ == "A3_32")
+  {
     activation_data_.version = DJI::onboardSDK::versionA3_32;
-  } else {
+  }
+  else
+  {
     ROS_ERROR_STREAM(kScreenPrefix + "Unknown drone version");
     abort();
   }
@@ -106,7 +113,8 @@ void DJIInterface::loadParameters()
   //  = {DJI::onboardSDK::BROADCAST_FREQ_0HZ};
   broadcast_frequency_.resize(kBroadcastFrequencySize, DJI::onboardSDK::BROADCAST_FREQ_0HZ);
 
-  if (drone_version_ == "M100") {
+  if (drone_version_ == "M100")
+  {
     // M100
 
     //timestamp
@@ -126,7 +134,9 @@ void DJIInterface::loadParameters()
     broadcast_frequency_[9] = getFrequencyValue(status_update_rate);
     broadcast_frequency_[10] = getFrequencyValue(status_update_rate);
     broadcast_frequency_[11] = getFrequencyValue(status_update_rate);
-  } else {
+  }
+  else
+  {
     // A3
 
     //timestamp
@@ -181,28 +191,31 @@ void DJIInterface::setPublishers()
 void DJIInterface::setSubscribers()
 {
   command_roll_pitch_yawrate_thrust_sub_ = nh_.subscribe(mav_msgs::default_topics::COMMAND_ROLL_PITCH_YAWRATE_THRUST, 1,
-                                                         &DJIInterface::commandRollPitchYawrateThrustCallback, this, 
+                                                         &DJIInterface::commandRollPitchYawrateThrustCallback, this,
                                                          ros::TransportHints().tcpNoDelay());
 }
 
-void DJIInterface::commandRollPitchYawrateThrustCallback(const mav_msgs::RollPitchYawrateThrustConstPtr& msg)
+void DJIInterface::commandRollPitchYawrateThrustCallback(const mav_msgs::RollPitchYawrateThrustConstPtr &msg)
 {
-  if(!initialized_){
+  if (!initialized_)
+  {
     return;
   }
 
   ROS_INFO_STREAM_ONCE(kScreenPrefix + "Received first roll pitch yawrate thrust command msg");
 
-  double roll_cmd = msg->roll*180.0/M_PI;
-  double pitch_cmd = -msg->pitch*180.0/M_PI;
-  double yaw_rate_cmd = -msg->yaw_rate*180.0/M_PI;
-  double throttle_cmd = thrust_offset_ + msg->thrust.z*thrust_coefficient_;
+  double roll_cmd = msg->roll * 180.0 / M_PI;
+  double pitch_cmd = -msg->pitch * 180.0 / M_PI;
+  double yaw_rate_cmd = -msg->yaw_rate * 180.0 / M_PI;
+  double throttle_cmd = thrust_offset_ + msg->thrust.z * thrust_coefficient_;
 
-  if(throttle_cmd < minimum_thrust_){
+  if (throttle_cmd < minimum_thrust_)
+  {
     ROS_WARN_STREAM_THROTTLE(0.1, kScreenPrefix + "Throttle command is below minimum.. set to minimum");
     throttle_cmd = minimum_thrust_;
   }
-  if(throttle_cmd > maximum_thrust_){
+  if (throttle_cmd > maximum_thrust_)
+  {
     ROS_WARN_STREAM_THROTTLE(0.1, kScreenPrefix + "Throttle command is too high.. set to max");
     throttle_cmd = maximum_thrust_;
   }
@@ -212,7 +225,8 @@ void DJIInterface::commandRollPitchYawrateThrustCallback(const mav_msgs::RollPit
 
 void DJIInterface::broadcastCallback()
 {
-  if(!initialized_){
+  if (!initialized_)
+  {
     return;
   }
 
@@ -228,112 +242,152 @@ void DJIInterface::broadcastCallback()
   updateControlMode(data);
 
   ros::WallTime t2 = ros::WallTime::now();
-
 }
 
 bool DJIInterface::checkNewData(FlightDataType data_type, const unsigned short msg_flag)
 {
-  bool version_A3 = firmware_version_ == DJI::onboardSDK::versionA3_31
-      || firmware_version_ == DJI::onboardSDK::versionA3_32;
+  bool version_A3 = firmware_version_ == DJI::onboardSDK::versionA3_31 || firmware_version_ == DJI::onboardSDK::versionA3_32;
 
-  bool version_M100 = firmware_version_ == DJI::onboardSDK::versionM100_31
-      || firmware_version_ == DJI::onboardSDK::versionM100_23;
+  bool version_M100 = firmware_version_ == DJI::onboardSDK::versionM100_31 || firmware_version_ == DJI::onboardSDK::versionM100_23;
 
-  if (version_A3) {
-    switch (data_type) {
-      case (FlightDataType::TimeStamp): {
-        if (flight_data_mask_A3_.kTimeStampMask & msg_flag) {
-          return true;
-        } else {
-          return false;
-        }
-        break;
+  if (version_A3)
+  {
+    switch (data_type)
+    {
+    case (FlightDataType::TimeStamp):
+    {
+      if (flight_data_mask_A3_.kTimeStampMask & msg_flag)
+      {
+        return true;
       }
-      case (FlightDataType::IMU): {
-        if (flight_data_mask_A3_.kIMUMask & msg_flag) {
-          return true;
-        } else {
-          return false;
-        }
-        break;
+      else
+      {
+        return false;
       }
-      case (FlightDataType::RCData): {
-        if (flight_data_mask_A3_.kRcMask & msg_flag) {
-          return true;
-        } else {
-          return false;
-        }
-        break;
-      }
-      case (FlightDataType::GPSLocation): {
-        if (flight_data_mask_A3_.kGPSMask & msg_flag) {
-          return true;
-        }
-        break;
-      }
-      case (FlightDataType::Status): {
-        if (flight_data_mask_A3_.kStatusMask & msg_flag) {
-          return true;
-        } else {
-          return false;
-        }
-        break;
-      }
+      break;
     }
-  }  // end A3
-
-  if (version_M100) {
-    switch (data_type) {
-      case (FlightDataType::TimeStamp): {
-        if (flight_data_mask_M100_.kTimeStampMask & msg_flag) {
-          return true;
-        } else {
-          return false;
-        }
-        break;
+    case (FlightDataType::IMU):
+    {
+      if (flight_data_mask_A3_.kIMUMask & msg_flag)
+      {
+        return true;
       }
-      case (FlightDataType::IMU): {
-        if (flight_data_mask_M100_.kIMUMask & msg_flag) {
-          return true;
-        } else {
-          return false;
-        }
-        break;
+      else
+      {
+        return false;
       }
-      case (FlightDataType::RCData): {
-        if (flight_data_mask_M100_.kRcMask & msg_flag) {
-          return true;
-        } else {
-          return false;
-        }
-        break;
-      }
-      case (FlightDataType::GPSLocation): {
-        if (flight_data_mask_M100_.kGPSMask & msg_flag) {
-          return true;
-        } else {
-          return false;
-        }
-        break;
-      }
-      case (FlightDataType::Status): {
-        if (flight_data_mask_M100_.kStatusMask & msg_flag) {
-          return true;
-        } else {
-          return false;
-        }
-        break;
-      }
+      break;
     }
-  }  // end M100
+    case (FlightDataType::RCData):
+    {
+      if (flight_data_mask_A3_.kRcMask & msg_flag)
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+      break;
+    }
+    case (FlightDataType::GPSLocation):
+    {
+      if (flight_data_mask_A3_.kGPSMask & msg_flag)
+      {
+        return true;
+      }
+      break;
+    }
+    case (FlightDataType::Status):
+    {
+      if (flight_data_mask_A3_.kStatusMask & msg_flag)
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+      break;
+    }
+    }
+  } // end A3
+
+  if (version_M100)
+  {
+    switch (data_type)
+    {
+    case (FlightDataType::TimeStamp):
+    {
+      if (flight_data_mask_M100_.kTimeStampMask & msg_flag)
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+      break;
+    }
+    case (FlightDataType::IMU):
+    {
+      if (flight_data_mask_M100_.kIMUMask & msg_flag)
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+      break;
+    }
+    case (FlightDataType::RCData):
+    {
+      if (flight_data_mask_M100_.kRcMask & msg_flag)
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+      break;
+    }
+    case (FlightDataType::GPSLocation):
+    {
+      if (flight_data_mask_M100_.kGPSMask & msg_flag)
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+      break;
+    }
+    case (FlightDataType::Status):
+    {
+      if (flight_data_mask_M100_.kStatusMask & msg_flag)
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+      break;
+    }
+    }
+  } // end M100
   return false;
 }
 
 //process data
-void DJIInterface::processIMU(const DJI::onboardSDK::BroadcastData& data)
+void DJIInterface::processIMU(const DJI::onboardSDK::BroadcastData &data)
 {
 
-  if (!checkNewData(FlightDataType::IMU, data.dataFlag)) {
+  if (!checkNewData(FlightDataType::IMU, data.dataFlag))
+  {
     // no new imu data
     return;
   }
@@ -341,12 +395,11 @@ void DJIInterface::processIMU(const DJI::onboardSDK::BroadcastData& data)
   // new IMU msg
   sensor_msgs::Imu msg;
   msg.header.frame_id = frame_id_;
-  msg.header.stamp = ros::Time::now();  //todo(fmina) time sync
+  msg.header.stamp = ros::Time::now(); //todo(fmina) time sync
 
   //transform attitude from NED to ENU
   Eigen::Quaterniond q_NED(data.q.q0, data.q.q1, data.q.q2, data.q.q3);
-  Eigen::Quaterniond q_ENU = Eigen::Quaterniond(0, 1.0 / sqrt(2.0), 1.0 / sqrt(2.0), 0) * q_NED
-      * Eigen::Quaterniond(0, 1, 0, 0);
+  Eigen::Quaterniond q_ENU = Eigen::Quaterniond(0, 1.0 / sqrt(2.0), 1.0 / sqrt(2.0), 0) * q_NED * Eigen::Quaterniond(0, 1, 0, 0);
 
   msg.orientation.w = q_ENU.w();
   msg.orientation.x = q_ENU.x();
@@ -375,12 +428,12 @@ void DJIInterface::processIMU(const DJI::onboardSDK::BroadcastData& data)
   msg.linear_acceleration_covariance[8] = kLinearAccelerationNoiseVariance;
 
   imu_pub_.publish(msg);
-
 }
 
-void DJIInterface::processRc(const DJI::onboardSDK::BroadcastData& data)
+void DJIInterface::processRc(const DJI::onboardSDK::BroadcastData &data)
 {
-  if (!checkNewData(FlightDataType::RCData, data.dataFlag)) {
+  if (!checkNewData(FlightDataType::RCData, data.dataFlag))
+  {
     // no new RC data
     return;
   }
@@ -388,7 +441,7 @@ void DJIInterface::processRc(const DJI::onboardSDK::BroadcastData& data)
   sensor_msgs::Joy msg;
 
   msg.header.frame_id = frame_id_;
-  msg.header.stamp = ros::Time::now();  //todo(fmina) time sync
+  msg.header.stamp = ros::Time::now(); //todo(fmina) time sync
 
   msg.axes.resize(8);
   // axis 0 is pitch
@@ -400,43 +453,55 @@ void DJIInterface::processRc(const DJI::onboardSDK::BroadcastData& data)
   //axis 3 is yaw
   msg.axes[3] = -data.rc.yaw / kRCStickMaxValue;
   //axis 4 is enable/disable external commands
-  if (data.rc.gear < int(-kRCStickMaxValue/2)) {
+  if (data.rc.gear < int(-kRCStickMaxValue / 2))
+  {
     msg.axes[4] = 1;
-  } else {
+  }
+  else
+  {
     msg.axes[4] = -1;
   }
   //axis 5 is mode
-  if (data.rc.mode == 8000) {
-    msg.axes[5] = 1;  // F mode
-  } else if (data.rc.mode == 0) {
-    msg.axes[5] = 0;  // A mode
-  } else if (data.rc.mode == -8000) {
-    msg.axes[5] = -1;  // P mode
+  if (data.rc.mode == 8000)
+  {
+    msg.axes[5] = 1; // F mode
+  }
+  else if (data.rc.mode == 0)
+  {
+    msg.axes[5] = 0; // A mode
+  }
+  else if (data.rc.mode == -8000)
+  {
+    msg.axes[5] = -1; // P mode
   }
 
   msg.axes[6] = 0;
   msg.axes[7] = 0;
 
   msg.buttons.resize(1);
-  if (data.rc.gear != 0) {
-    msg.buttons[0] = 1;  // rc is on
-  } else {
+  if (data.rc.gear != 0)
+  {
+    msg.buttons[0] = 1; // rc is on
+  }
+  else
+  {
     msg.buttons[0] = 0;
   }
 
   rc_pub_.publish(msg);
 }
-void DJIInterface::processTimeStamp(const DJI::onboardSDK::BroadcastData& data)
+void DJIInterface::processTimeStamp(const DJI::onboardSDK::BroadcastData &data)
 {
-  if (!checkNewData(FlightDataType::TimeStamp, data.dataFlag)) {
+  if (!checkNewData(FlightDataType::TimeStamp, data.dataFlag))
+  {
     // no new timestamp data
     return;
   }
-
 }
-void DJIInterface::processStatusInfo(const DJI::onboardSDK::BroadcastData& data)
+void DJIInterface::processStatusInfo(const DJI::onboardSDK::BroadcastData &data)
 {
-  if (!checkNewData(FlightDataType::Status, data.dataFlag)) {
+  if (!checkNewData(FlightDataType::Status, data.dataFlag))
+  {
     // no new battery info data
     return;
   }
@@ -451,23 +516,27 @@ void DJIInterface::processStatusInfo(const DJI::onboardSDK::BroadcastData& data)
   status_pub_.publish(msg);
 }
 
-void DJIInterface::updateControlMode(const DJI::onboardSDK::BroadcastData& data)
+void DJIInterface::updateControlMode(const DJI::onboardSDK::BroadcastData &data)
 {
 
   //need control status and RC data
-  if (!checkNewData(FlightDataType::Status, data.dataFlag)) {
+  if (!checkNewData(FlightDataType::Status, data.dataFlag))
+  {
     return;
   }
-  if (!checkNewData(FlightDataType::RCData, data.dataFlag)) {
+  if (!checkNewData(FlightDataType::RCData, data.dataFlag))
+  {
     return;
   }
   //if RC is on F mode and serial is enabled, external control should be enabled
   bool rc_mode_F = data.rc.mode == 8000;
-  bool rc_serial_enabled = data.rc.gear < int(-kRCStickMaxValue/2);
+  bool rc_serial_enabled = data.rc.gear < int(-kRCStickMaxValue / 2);
   bool external_control_mode = data.ctrlInfo.deviceStatus == DJI::onboardSDK::Flight::DEVICE_SDK;
 
-  if(rc_mode_F){
-    if (!external_control_mode) {
+  if (rc_mode_F)
+  {
+    if (!external_control_mode)
+    {
       dji_comm_.setExternalControl(true);
     }
   }
@@ -506,25 +575,41 @@ bool DJIInterface::disArmServiceCallback(std_srvs::Empty::Request & /*request*/,
   //Check if system was initialized, in F-mode and SDK control(serial) had been enabled
   if (initialized_ && rc_mode_F && rc_serial_enabled)
   {
-    ROS_ERROR_STREAM(kScreenPrefix + "DISARM INITIALIZED");
+    ROS_WARN_STREAM_ONCE(kScreenPrefix + "SYSTEM DISARM INITIALIZED");
     //Disarm
     bool disArmSuccess = dji_comm_.setDisArm(1); //timeout has not effect
     return disArmSuccess;
   }
   else
   {
-    ROS_WARN_STREAM(kScreenPrefix + "CANNOT INITIALIZE SYSTEM DISARM -- Check RC Switches");
+    ROS_ERROR_STREAM_ONCE(kScreenPrefix + "CANNOT INITIALIZE SYSTEM DISARM -- Check RC Switches, Must be in F-mode and RC Serial should be on");
     std::cout << kScreenPrefix + "System Intialized: " << initialized_ << " ,RC F-mode: " << rc_mode_F << " ,RC Serial enabled: " << rc_serial_enabled << std::endl;
     return false;
   }
 }
+
+
 //ROS service for arm and take-off
 bool DJIInterface::armServiceCallback(std_srvs::Empty::Request & /*request*/, std_srvs::Empty::Response & /*response*/)
 {
-  std::cout << "armServiceCallback\n";
-  bool disArmSuccess = dji_comm_.setArm(1); //timeout has not effect
+  //Get Data
+  DJI::onboardSDK::BroadcastData data;
+  dji_comm_.getBroadcastData(&data);
+  bool rc_mode_F = (data.rc.mode == 8000);
+  bool rc_serial_enabled = data.rc.gear < int(-kRCStickMaxValue / 2); //kRCStickMaxValue = 10000.0;
+  //ARM system if only F-Mode is on and Serial is enabled
+  if (initialized_ && rc_mode_F && rc_serial_enabled)
+  {
+    ROS_WARN_STREAM_ONCE(kScreenPrefix + "SYSTEM ARM INITIALIZED");
+    bool armSuccess = dji_comm_.setArm(1); //timeout has not effect
+  }
+  else
+  {
+    ROS_ERROR_STREAM_ONCE(kScreenPrefix + "CANNOT ARM SYSTEM -- Check RC Switches, Must be in F-mode and RC Serial should be on");
+    std::cout << kScreenPrefix + "System Intialized: " << initialized_ << " ,RC F-mode: " << rc_mode_F << " ,RC Serial enabled: " << rc_serial_enabled << std::endl;
+    return false;
+  }
 }
 
 //CUSTOMIZATION
-
-} /* namespace mav_disturbance_observer */
+} // namespace dji_interface
