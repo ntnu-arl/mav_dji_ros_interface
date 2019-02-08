@@ -183,7 +183,7 @@ void DJIInterface::setPublishers()
   status_pub_ = nh_.advertise<mav_msgs::Status>(mav_msgs::default_topics::STATUS, 1);
 
   //CUSTOMIZATION
-  disArmService = nh_.advertiseService("/matrice/emergency_disarm", &DJIInterface::disArmServiceCallback, this);
+  disArmService = nh_.advertiseService("/matrice/disarm", &DJIInterface::disArmServiceCallback, this);
   armService = nh_.advertiseService("/matrice/arm", &DJIInterface::armServiceCallback, this);
   //CUSTOMIZATION
 }
@@ -573,7 +573,7 @@ bool DJIInterface::disArmServiceCallback(std_srvs::Empty::Request & /*request*/,
   bool rc_serial_enabled = data.rc.gear < int(-kRCStickMaxValue / 2); //kRCStickMaxValue = 10000.0;
 
   //Check if system was initialized, in F-mode and SDK control(serial) had been enabled
-  if (initialized_ && rc_mode_F && rc_serial_enabled)
+  if (initialized_ && rc_mode_F /*&& rc_serial_enabled*/)
   {
     ROS_WARN_STREAM_ONCE(kScreenPrefix + "SYSTEM DISARM INITIALIZED");
     //Disarm
@@ -582,7 +582,7 @@ bool DJIInterface::disArmServiceCallback(std_srvs::Empty::Request & /*request*/,
   }
   else
   {
-    ROS_ERROR_STREAM_ONCE(kScreenPrefix + "CANNOT INITIALIZE SYSTEM DISARM -- Check RC Switches, Must be in F-mode and RC Serial should be on");
+    ROS_ERROR_STREAM_ONCE(kScreenPrefix + "CANNOT INITIALIZE SYSTEM DISARM -- Check RC Switches, Must be in F-mode"); //F-mode for OnBoard SDK Control
     std::cout << kScreenPrefix + "System Intialized: " << initialized_ << " ,RC F-mode: " << rc_mode_F << " ,RC Serial enabled: " << rc_serial_enabled << std::endl;
     return false;
   }
@@ -605,7 +605,7 @@ bool DJIInterface::armServiceCallback(std_srvs::Empty::Request & /*request*/, st
   }
   else
   {
-    ROS_ERROR_STREAM_ONCE(kScreenPrefix + "CANNOT ARM SYSTEM -- Check RC Switches, Must be in F-mode and RC Serial should be on");
+    ROS_ERROR_STREAM_ONCE(kScreenPrefix + "CANNOT ARM SYSTEM -- Check RC Switches, Must be in F-mode and RC Serial should be on"); //F-mode for OnBoard SDK Control //Serial On for MPC to publish reference
     std::cout << kScreenPrefix + "System Intialized: " << initialized_ << " ,RC F-mode: " << rc_mode_F << " ,RC Serial enabled: " << rc_serial_enabled << std::endl;
     return false;
   }

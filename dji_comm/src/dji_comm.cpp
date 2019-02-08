@@ -28,18 +28,16 @@
  */
 #include "dji_comm/dji_comm.h"
 
-namespace dji_comm {
-
-DJIComm::DJIComm(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh):
-    nh_(nh),
-    private_nh_(private_nh)
+namespace dji_comm
 {
 
+DJIComm::DJIComm(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh) : nh_(nh),
+                                                                                 private_nh_(private_nh)
+{
 }
 
 DJIComm::~DJIComm()
 {
-
 }
 
 void DJIComm::init(std::string device, unsigned int baudrate)
@@ -57,21 +55,23 @@ void DJIComm::init(std::string device, unsigned int baudrate)
   hot_point_ptr_.reset(new DJI::onboardSDK::HotPoint(core_api_ptr_.get()));
   follow_ptr_.reset(new DJI::onboardSDK::Follow(core_api_ptr_.get()));
 
-
   int ret = pthread_create(&communication_thread_, 0, mainCommunicationThread, (void *)core_api_ptr_.get());
-//  int ret_send = pthread_create(&send_communication_thread_, 0, mainSendCommunicationThread, (void *)core_api_ptr_.get());
+  //  int ret_send = pthread_create(&send_communication_thread_, 0, mainSendCommunicationThread, (void *)core_api_ptr_.get());
 
-  if (0 != ret){
+  if (0 != ret)
+  {
     ROS_FATAL("Cannot create new thread for readPoll and sendPoll!");
-  }else{
+  }
+  else
+  {
     ROS_INFO("Succeed to create thread for readPoll and sendPoll");
   }
 
-//  if (0 != ret_send){
-//    ROS_FATAL("Cannot create new thread for sendPoll!");
-//  }else{
-//    ROS_INFO("Succeed to create thread for sendPoll");
-//  }
+  //  if (0 != ret_send){
+  //    ROS_FATAL("Cannot create new thread for sendPoll!");
+  //  }else{
+  //    ROS_INFO("Succeed to create thread for sendPoll");
+  //  }
 
   core_api_ptr_->getDroneVersion();
   ros::Duration(1.0).sleep();
@@ -83,19 +83,23 @@ void DJIComm::init(std::string device, unsigned int baudrate)
   printf("==============\n");
 }
 
-void DJIComm::activate(DJI::onboardSDK::ActivateData *data, DJI::onboardSDK::CallBack callback){
+void DJIComm::activate(DJI::onboardSDK::ActivateData *data, DJI::onboardSDK::CallBack callback)
+{
   core_api_ptr_->activate(data, callback);
 }
 
-void DJIComm::getBroadcastData(DJI::onboardSDK::BroadcastData* data){
+void DJIComm::getBroadcastData(DJI::onboardSDK::BroadcastData *data)
+{
   *data = core_api_ptr_->getBroadcastData();
 }
-void DJIComm::getFirmwareVersion(DJI::onboardSDK::Version* firmware_version){
+void DJIComm::getFirmwareVersion(DJI::onboardSDK::Version *firmware_version)
+{
   *firmware_version = core_api_ptr_->getFwVersion();
 }
 
-void DJIComm::broadcastCallback(DJI::onboardSDK::CoreAPI *coreAPI, DJI::onboardSDK::Header *header, void *userData){
-  ( (DJIComm*)userData )->broadcast_callback_();
+void DJIComm::broadcastCallback(DJI::onboardSDK::CoreAPI *coreAPI, DJI::onboardSDK::Header *header, void *userData)
+{
+  ((DJIComm *)userData)->broadcast_callback_();
 }
 
 //void* DJIComm::mainReadCommunicationThread(void* core_api){
@@ -106,15 +110,17 @@ void DJIComm::broadcastCallback(DJI::onboardSDK::CoreAPI *coreAPI, DJI::onboardS
 //  }
 //}
 
-void* DJIComm::mainCommunicationThread(void* core_api){
-  DJI::onboardSDK::CoreAPI* p_coreAPI = (DJI::onboardSDK::CoreAPI*) core_api;
+void *DJIComm::mainCommunicationThread(void *core_api)
+{
+  DJI::onboardSDK::CoreAPI *p_coreAPI = (DJI::onboardSDK::CoreAPI *)core_api;
   double average_sending_time = 0;
   double average_read_time = 0;
   double max_sending_time = 0;
   double max_read_time = 0;
   int counter = 0;
 
-  while (ros::ok()) {
+  while (ros::ok())
+  {
     ros::WallTime t1 = ros::WallTime::now();
     p_coreAPI->sendPoll();
     ros::WallTime t2 = ros::WallTime::now();
@@ -123,34 +129,35 @@ void* DJIComm::mainCommunicationThread(void* core_api){
     p_coreAPI->readPoll();
     ros::WallTime t4 = ros::WallTime::now();
     usleep(10);
-    double dt_send = (t2-t1).toSec();
-    double dt_read = (t4-t3).toSec();
+    double dt_send = (t2 - t1).toSec();
+    double dt_read = (t4 - t3).toSec();
     average_sending_time += dt_send;
     average_read_time += dt_read;
 
-    if(dt_send > max_sending_time){
+    if (dt_send > max_sending_time)
+    {
       max_sending_time = dt_send;
     }
 
-    if(dt_read > max_read_time){
+    if (dt_read > max_read_time)
+    {
       max_read_time = dt_read;
     }
 
     counter++;
 
-    if(counter > 10000){
+    if (counter > 10000)
+    {
       average_sending_time = average_sending_time / counter;
-      average_read_time = average_read_time/counter;
-     // std::cout << "avg send time: " << average_sending_time*1e3 << "\t max send time: " << max_sending_time*1e3 << std::endl;
-     // std::cout << "avg read time: " << average_read_time*1e3 << "\t max read time: " << max_read_time*1e3 << std::endl;
+      average_read_time = average_read_time / counter;
+      // std::cout << "avg send time: " << average_sending_time*1e3 << "\t max send time: " << max_sending_time*1e3 << std::endl;
+      // std::cout << "avg read time: " << average_read_time*1e3 << "\t max read time: " << max_read_time*1e3 << std::endl;
       max_sending_time = 0;
       max_read_time = 0;
       average_sending_time = 0;
       average_read_time = 0;
       counter = 0;
     }
-
-
   }
 }
 
@@ -159,28 +166,31 @@ void DJIComm::setExternalControl(bool enable)
   unsigned short res = core_api_ptr_->setControl(enable, kSerialTimeout_ms);
 }
 
-void DJIComm::setRollPitchYawrateThrust(double roll_cmd, double pitch_cmd, double yaw_rate, double thrust){
+void DJIComm::setRollPitchYawrateThrust(double roll_cmd, double pitch_cmd, double yaw_rate, double thrust)
+{
   static int counter = 0;
   static double max_dt = 0.0;
   ros::WallTime t1 = ros::WallTime::now();
   flight_ptr_->setMovementControl(0x2A, roll_cmd, pitch_cmd, thrust, yaw_rate);
   ros::WallTime t2 = ros::WallTime::now();
 
-  double dt = (t2-t1).toSec();
-  if(dt > max_dt){
-    max_dt = dt;
-  }
-  counter++;
-
-  if(counter > 100){
-    std::cout << "send one command dt: " << dt*1e3 << "\t max dt: " << max_dt*1e3 << std::endl;
-    max_dt = 0;
-    counter = 0;
-  }
-
+  // //DEBUGGING
+  // double dt = (t2 - t1).toSec();
+  // if (dt > max_dt)
+  // {
+  //   max_dt = dt;
+  // }
+  // counter++;
+  // if (counter > 100)
+  // {
+  //   std::cout << "send one command dt: " << dt * 1e3 << "\t max dt: " << max_dt * 1e3 << std::endl;
+  //   max_dt = 0;
+  //   counter = 0;
+  // }
 }
 
-void DJIComm::setBroadcastFrequency(uint8_t* freq){
+void DJIComm::setBroadcastFrequency(uint8_t *freq)
+{
   core_api_ptr_->setBroadcastFreq(freq);
 }
 
@@ -188,17 +198,14 @@ void DJIComm::setBroadcastFrequency(uint8_t* freq){
 //This function calls setArm in DJI_FLIGHT to disarm the system
 bool DJIComm::setDisArm(int waitTime)
 {
-  flight_ptr_->task(DJI::onboardSDK::Flight::TASK::TASK_LANDING); 
+  flight_ptr_->task(DJI::onboardSDK::Flight::TASK::TASK_LANDING);
   flight_ptr_->setArm(false);
   return true;
 }
 //This function calls setArm in DJI_FLIGHT to arm the system
 bool DJIComm::setArm(int waitTime)
 {
-  //flight_ptr_->task(DJI::onboardSDK::Flight::TASK::TASK_LANDING);
-  std::cout << "Call flight_ptr_->setArm(true)\n";
   flight_ptr_->setArm(true);
-  std::cout << "flight_ptr_->setArm(true) DONE\n";
   return true;
 }
 //CUSTOMIZATION
