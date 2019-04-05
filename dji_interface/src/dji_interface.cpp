@@ -566,14 +566,8 @@ int DJIInterface::getFrequencyValue(int freq_hz)
 //ROS service for emergency stop
 bool DJIInterface::disArmServiceCallback(std_srvs::Empty::Request & /*request*/, std_srvs::Empty::Response & /*response*/)
 {
-  //Get Data
-  DJI::onboardSDK::BroadcastData data;
-  dji_comm_.getBroadcastData(&data);
-  bool rc_mode_F = (data.rc.mode == 8000);
-  bool rc_serial_enabled = data.rc.gear < int(-kRCStickMaxValue / 2); //kRCStickMaxValue = 10000.0;
-
-  //Check if system was initialized, in F-mode and SDK control(serial) had been enabled
-  if (initialized_ && rc_mode_F /*&& rc_serial_enabled*/)
+  //Check if system was initialized
+  if (initialized_)
   {
     ROS_WARN_STREAM_ONCE(kScreenPrefix + "SYSTEM DISARM INITIALIZED");
     //Disarm
@@ -582,12 +576,11 @@ bool DJIInterface::disArmServiceCallback(std_srvs::Empty::Request & /*request*/,
   }
   else
   {
-    ROS_ERROR_STREAM_ONCE(kScreenPrefix + "CANNOT INITIALIZE SYSTEM DISARM -- Check RC Switches, Must be in F-mode"); //F-mode for OnBoard SDK Control
-    std::cout << kScreenPrefix + "System Intialized: " << initialized_ << " ,RC F-mode: " << rc_mode_F << " ,RC Serial enabled: " << rc_serial_enabled << std::endl;
+    ROS_ERROR_STREAM_ONCE(kScreenPrefix + "CANNOT INITIALIZE SYSTEM DISARM");
+    std::cout << kScreenPrefix + "System Intialized: " << initialized_ << std::endl;
     return false;
   }
 }
-
 
 //ROS service for arm and take-off
 bool DJIInterface::armServiceCallback(std_srvs::Empty::Request & /*request*/, std_srvs::Empty::Response & /*response*/)
