@@ -588,6 +588,9 @@ bool DJIInterface::armServiceCallback(std_srvs::Empty::Request & /*request*/, st
   //Get Data
   DJI::onboardSDK::BroadcastData data;
   dji_comm_.getBroadcastData(&data);
+  // std::cout << "Mode = %i" <<  data.rc.mode << std::endl;
+  // std::cout << "SERIAL = %i" <<  data.rc.gear << std::endl;
+  // std::cout << "IS INIT = %i" <<  initialized_ << std::endl;
   bool rc_mode_F = (data.rc.mode == 8000);
   bool rc_serial_enabled = data.rc.gear < int(-kRCStickMaxValue / 2); //kRCStickMaxValue = 10000.0;
   //ARM system if only F-Mode is on and Serial is enabled
@@ -595,6 +598,7 @@ bool DJIInterface::armServiceCallback(std_srvs::Empty::Request & /*request*/, st
   {
     ROS_WARN_STREAM_ONCE(kScreenPrefix + "SYSTEM ARM INITIALIZED");
     bool armSuccess = dji_comm_.setArm(1); //timeout has not effect
+    return armSuccess;
   }
   else
   {
